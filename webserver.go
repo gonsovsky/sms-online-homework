@@ -41,7 +41,7 @@ func (web *WebServer) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Send to Rabbit MQ
-	web.sender.Publish(msg)
+	web.sender.Publish(output)
 
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)

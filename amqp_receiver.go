@@ -6,15 +6,14 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func failOnReceive(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
+//AmqpReceiver - subsribes for events
+type AmqpReceiver struct {
+	config Configuration
 }
 
-//StartAmqpReceiver - Let's start AMQP Receiver
-func AmqpReceiver(config Configuration) {
-	conn, err := amqp.Dial(config.Amqp.URL)
+//Subscribe - Let's launch web server
+func (receiver *AmqpReceiver) Subscribe() {
+	conn, err := amqp.Dial(receiver.config.Amqp.URL)
 	failOnReceive(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -23,12 +22,12 @@ func AmqpReceiver(config Configuration) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"myqueue", // name
-		false,     // durable
-		false,     // delete when usused
-		false,     // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		receiver.config.Amqp.Queue, // name
+		false,                      // durable
+		false,                      // delete when usused
+		false,                      // exclusive
+		false,                      // no-wait
+		nil,                        // arguments
 	)
 	failOnReceive(err, "Failed to declare a queue")
 
@@ -53,4 +52,10 @@ func AmqpReceiver(config Configuration) {
 
 	log.Printf(" [*] AMQP Waiting for messages.")
 	<-forever
+}
+
+func failOnReceive(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
 }

@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
 	"log"
-	"strconv"
 
 	"github.com/streadway/amqp"
 )
@@ -16,8 +17,15 @@ type AmqpSender struct {
 	err     error
 }
 
-//Connect - Connect to AMQP service
-func (sender *AmqpSender) Connect() {
+func failOnSend(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+//Publish - Send Message to RabbitMQ
+func (sender *AmqpSender) Publish(msg Message) {
+
 	sender.conn, sender.err = amqp.Dial(sender.config.Amqp.URL)
 	failOnSend(sender.err, "Failed to connect to RabbitMQ")
 	defer sender.conn.Close()
@@ -35,17 +43,10 @@ func (sender *AmqpSender) Connect() {
 		nil,                      // arguments
 	)
 	failOnSend(sender.err, "Failed to declare a queue")
-}
 
-func failOnSend(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
+	buf := &bytes.Buffer{}
+	err := binary.Write(buf, binary.BigEndian, msg)
 
-//Publish - Send Message to RabbitMQ
-func (sender *AmqpSender) Publish(msg Message) {
-	body := strconv.Itoa(msg.Item)
 	sender.err = sender.channel.Publish(
 		"",                // exchange
 		sender.queue.Name, // routing key
@@ -53,7 +54,7 @@ func (sender *AmqpSender) Publish(msg Message) {
 		false,             // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(body),
+			Body:        buf.Bytes(),
 		})
 	failOnSend(sender.err, "Failed to publish a message")
 

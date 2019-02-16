@@ -5,20 +5,21 @@ import (
 )
 
 func main() {
-	//Let's read configuration
+	//Rread configuration from config.json
 	var config = ReadConfiguration()
 
-	//Connect to AMQP service to resend incoming requests from Web
+	//AMQP service to resend incoming requests from Web
 	amqpSender := AmqpSender{config: config}
-	amqpSender.Connect()
 
-	//Let's start Web server to listen incoming requests
+	//Start Web server to listen incoming requests
 	webServer := WebServer{config: config, sender: amqpSender}
 	go webServer.Start()
 
-	//Let's start Amqp Receiver to listen incoming requests
-	go AmqpReceiver(config)
+	//Subsrcibe for Amqp messages to put them to databse
+	amqpReceiver := AmqpReceiver{config: config}
+	go amqpReceiver.Subscribe()
 
+	//Don't terminate main thread
 	var wg = &sync.WaitGroup{}
 	wg.Add(2)
 	wg.Wait()
