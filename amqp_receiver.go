@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
@@ -10,6 +9,7 @@ import (
 //AmqpReceiver - subsribes for events
 type AmqpReceiver struct {
 	config Configuration
+	db     DataBase
 }
 
 //Subscribe - Let's launch web server
@@ -48,8 +48,9 @@ func (receiver *AmqpReceiver) Subscribe() {
 	go func() {
 		for d := range msgs {
 			msg := Message{}
-			json.Unmarshal(d.Body, &msg)
+			msg.FromJSON(d.Body)
 			log.Println("AMQP Received a message: ", msg.Item)
+			receiver.db.Post(msg)
 		}
 	}()
 

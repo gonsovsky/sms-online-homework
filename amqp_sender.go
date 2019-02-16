@@ -1,13 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
 )
 
-//AmqpSender - Resend requests to Rabbit service from web
+//AmqpSender - publish requests to Rabbit service from web
 type AmqpSender struct {
 	config  Configuration
 	channel *amqp.Channel
@@ -43,12 +42,6 @@ func (sender *AmqpSender) Publish(msg Message) {
 	)
 	failOnSend(sender.err, "Failed to declare a queue")
 
-	output, err := json.Marshal(msg)
-	if err != nil {
-		failOnSend(err, "Failed to marshal a message")
-		return
-	}
-
 	sender.err = sender.channel.Publish(
 		"",                // exchange
 		sender.queue.Name, // routing key
@@ -56,7 +49,7 @@ func (sender *AmqpSender) Publish(msg Message) {
 		false,             // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        output,
+			Body:        msg.ToJSON(),
 		})
 	failOnSend(sender.err, "Failed to publish a message")
 

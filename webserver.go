@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -24,26 +23,11 @@ func (web *WebServer) Start() {
 
 //Index - handle POST request with JSON
 func (web *WebServer) index(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
 	var msg Message
-	err := decoder.Decode(&msg)
-	if err != nil {
-		panic(err)
-	}
-	log.Println("WebServer received a message: ", msg.Item)
-
-	//Return TimeStamp to client
+	msg.FromReadCloser(r.Body)
 	msg.TimeStamp = time.Now()
-	output, err := json.Marshal(msg)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	//Send to Rabbit MQ
 	web.sender.Publish(msg)
-
 	w.Header().Set("content-type", "application/json")
-	w.Write(output)
+	w.Write(msg.ToJSON())
 
 }

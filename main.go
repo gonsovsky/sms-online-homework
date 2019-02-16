@@ -15,11 +15,15 @@ func main() {
 	webServer := WebServer{config: config, sender: amqpSender}
 	go webServer.Start()
 
+	//Atomigrate DB
+	db := DataBase{config: config}
+	db.Initalize()
+
 	//Subsrcibe for Amqp messages to put them to databse
-	amqpReceiver := AmqpReceiver{config: config}
+	amqpReceiver := AmqpReceiver{config: config, db: db}
 	go amqpReceiver.Subscribe()
 
-	//Start emulating requests to WebServer by timer
+	//Start emulation by timer with 2 seconds
 	pusher := Pusher{config: config}
 	go pusher.Start()
 
