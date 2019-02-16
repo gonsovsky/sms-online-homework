@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
@@ -46,7 +47,9 @@ func (receiver *AmqpReceiver) Subscribe() {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("AMQP Received a message: ", d.Body)
+			msg := Message{}
+			json.Unmarshal(d.Body, &msg)
+			log.Println("AMQP Received a message: ", msg.Item)
 		}
 	}()
 

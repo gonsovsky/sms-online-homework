@@ -19,6 +19,10 @@ func main() {
 	amqpReceiver := AmqpReceiver{config: config}
 	go amqpReceiver.Subscribe()
 
+	//Start emulating requests to WebServer by timer
+	pusher := Pusher{config: config}
+	go pusher.Start()
+
 	//Don't terminate main thread
 	var wg = &sync.WaitGroup{}
 	wg.Add(2)

@@ -15,14 +15,14 @@ type WebServer struct {
 	sender AmqpSender
 }
 
-//Start - Let's launch web server
+//Start - launch web server
 func (web *WebServer) Start() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", web.index)
 	log.Fatal(http.ListenAndServe(web.config.WebServer.Address+":"+web.config.WebServer.Port, router))
 }
 
-//Index Let's handle POST request with JSON
+//Index - handle POST request with JSON
 func (web *WebServer) index(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var msg Message
@@ -41,7 +41,7 @@ func (web *WebServer) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Send to Rabbit MQ
-	web.sender.Publish(output)
+	web.sender.Publish(msg)
 
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)

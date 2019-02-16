@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
+	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
@@ -44,8 +43,11 @@ func (sender *AmqpSender) Publish(msg Message) {
 	)
 	failOnSend(sender.err, "Failed to declare a queue")
 
-	buf := &bytes.Buffer{}
-	err := binary.Write(buf, binary.BigEndian, msg)
+	output, err := json.Marshal(msg)
+	if err != nil {
+		failOnSend(err, "Failed to marshal a message")
+		return
+	}
 
 	sender.err = sender.channel.Publish(
 		"",                // exchange
@@ -54,7 +56,7 @@ func (sender *AmqpSender) Publish(msg Message) {
 		false,             // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        buf.Bytes(),
+			Body:        output,
 		})
 	failOnSend(sender.err, "Failed to publish a message")
 
