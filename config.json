@@ -1,0 +1,20 @@
+{
+    "Webserver": 
+    {
+		"Address": "0.0.0.0",
+		"Port": "8000"
+    },
+    "Amqp": 
+    {
+		"Url": "amqp://newadmin:abc123@193.124.59.179:5672/",
+		"Queue": "myqueue"
+    },
+    "Db": 
+    {
+        "Host": "193.124.59.179",
+        "Port": "5432",
+		"User": "postgres",
+		"Password": "abc123",
+		"Database":  "postgres"
+	}
+}
