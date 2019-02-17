@@ -1,34 +1,43 @@
 package main
 
 import (
+	"consumer"
+	"producer"
+	"shared"
 	"sync"
 )
 
 func main() {
-	//Rread configuration from config.json
-	var config = ReadConfiguration()
+	go startProducer()
+	go startConsumer()
+	go startEmulator()
 
+	var wg = &sync.WaitGroup{}
+	wg.Add(3)
+	wg.Wait()
+}
+
+func startProducer() {
 	//AMQP service to resend incoming requests from Web
-	amqpSender := AmqpSender{config: config}
+	amqpSender := producer.AmqpSender{Config: shared.AppConfig()}
 
 	//Start Web server to listen incoming requests
-	webServer := WebServer{config: config, sender: amqpSender}
-	go webServer.Start()
+	webServer := producer.WebServer{Config: shared.AppConfig(), Sender: amqpSender}
+	webServer.Start()
+}
 
+func startConsumer() {
 	//Atomigrate DB
-	db := DataBase{config: config}
+	db := consumer.DataBase{Config: shared.AppConfig()}
 	db.Initalize()
 
 	//Subsrcibe for Amqp messages to put them to databse
-	amqpReceiver := AmqpReceiver{config: config, db: db}
-	go amqpReceiver.Subscribe()
+	amqpReceiver := consumer.AmqpReceiver{Config: shared.AppConfig(), Db: db}
+	amqpReceiver.Subscribe()
+}
 
+func startEmulator() {
 	//Start emulation by timer with 2 seconds
-	pusher := Pusher{config: config}
-	go pusher.Start()
-
-	//Don't terminate main thread
-	var wg = &sync.WaitGroup{}
-	wg.Add(2)
-	wg.Wait()
+	emu := Emulator{Config: shared.AppConfig()}
+	emu.Start()
 }
