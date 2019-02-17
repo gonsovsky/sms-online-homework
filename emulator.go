@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"shared"
 	"time"
 )
@@ -25,7 +26,11 @@ func (e *Emulator) Start() {
 }
 
 func (e *Emulator) serviceURL() string {
-	return "http://" + e.Config.WebServer.Address + ":" + e.Config.WebServer.Port + "/"
+	url := url.URL{
+		Scheme: "http",
+		Host:   e.Config.WebServer.Address + ":" + e.Config.WebServer.Port,
+	}
+	return url.String()
 }
 
 func (e *Emulator) post(msg *shared.Message) string {
