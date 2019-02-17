@@ -54,7 +54,7 @@ func (receiver *AmqpReceiver) Subscribe() {
 			msg := shared.Message{}
 			msg.FromJSON(d.Body)
 			receiver.doWork(&msg)
-			ch.Ack(d.DeliveryTag, true)
+			d.Ack(false)
 			log.Println("AMQP ", receiver.No, " Received a message: ", msg.Item)
 		}
 	}()
