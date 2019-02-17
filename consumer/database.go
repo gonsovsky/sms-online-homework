@@ -17,6 +17,14 @@ type DataBase struct {
 
 //Initalize - Initialize DB
 func (database *DataBase) Initalize() {
+	database.Open()
+	database.db.DropTableIfExists(&shared.Message{})
+	database.db.AutoMigrate(&shared.Message{})
+	log.Println("Databse initialized and truncated")
+}
+
+//Open - Open DB
+func (database *DataBase) Open() {
 	constr := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 		database.Config.Db.Host, database.Config.Db.Port,
 		database.Config.Db.User, database.Config.Db.Database,
@@ -25,14 +33,17 @@ func (database *DataBase) Initalize() {
 	if err != nil {
 		panic(err)
 	}
-	db.DropTableIfExists(&shared.Message{})
-	db.AutoMigrate(&shared.Message{})
 	database.db = db
-	log.Println("Databse initialized and truncated")
 }
 
 //Post - Post message to databse
-func (database *DataBase) Post(msg shared.Message) {
+func (database *DataBase) Post(msg *shared.Message) {
 	database.db.Create(msg)
-	log.Println("Databse wrote message: ", msg.Item)
+	log.Println("Data ", msg.Consumer, " wrote message: ", msg.Item)
+}
+
+//Count - Count Records
+func (database *DataBase) Count() int {
+	q := database.db.Find(&shared.Message{}).RowsAffected
+	return int(q)
 }

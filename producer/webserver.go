@@ -26,7 +26,7 @@ func (web *WebServer) Start() {
 func (web *WebServer) index(w http.ResponseWriter, r *http.Request) {
 	var msg shared.Message
 	msg.FromReadCloser(r.Body)
-	msg.TimeStamp = time.Now()
+	msg.RequestTime = time.Now()
 	web.Sender.Publish(msg)
 	w.Header().Set("content-type", "application/json")
 	w.Write(msg.ToJSON())

@@ -3,14 +3,16 @@ package consumer
 import (
 	"log"
 	"shared"
+	"time"
 
 	"github.com/streadway/amqp"
 )
 
 //AmqpReceiver - subsribes for events
 type AmqpReceiver struct {
+	No     int
 	Config *shared.Config
-	Db     DataBase
+	Db     *DataBase
 }
 
 //Subscribe - Let's launch web server
@@ -20,12 +22,13 @@ func (receiver *AmqpReceiver) Subscribe() {
 	defer conn.Close()
 
 	ch, err := conn.Channel()
+	ch.Confirm(false)
 	failOnReceive(err, "Failed to open a channel")
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
 		receiver.Config.Amqp.Queue, // name
-		false,                      // durable
+		true,                       // durable
 		false,                      // delete when usused
 		false,                      // exclusive
 		false,                      // no-wait
@@ -36,7 +39,7 @@ func (receiver *AmqpReceiver) Subscribe() {
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto-ack
+		false,  // auto-ack
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
@@ -50,13 +53,21 @@ func (receiver *AmqpReceiver) Subscribe() {
 		for d := range msgs {
 			msg := shared.Message{}
 			msg.FromJSON(d.Body)
-			log.Println("AMQP Received a message: ", msg.Item)
-			receiver.Db.Post(msg)
+			receiver.doWork(&msg)
+			ch.Ack(d.DeliveryTag, true)
+			log.Println("AMQP ", receiver.No, " Received a message: ", msg.Item)
 		}
 	}()
 
-	log.Printf(" [*] AMQP Waiting for messages.")
+	log.Println("[", receiver.No, "] AMQP Waiting for messages.")
 	<-forever
+}
+
+func (receiver *AmqpReceiver) doWork(msg *shared.Message) {
+	msg.ResponseTime = time.Now()
+	msg.Consumer = receiver.No
+	msg.AcknowledgeTime = time.Now()
+	receiver.Db.Post(msg)
 }
 
 func failOnReceive(err error, msg string) {

@@ -5,39 +5,50 @@ import (
 	"producer"
 	"shared"
 	"sync"
+	"tester"
 )
 
 func main() {
-	go startProducer()
-	go startConsumer()
-	go startEmulator()
+	startProducer()
+	startConsumer(10)
 
-	var wg = &sync.WaitGroup{}
-	wg.Add(3)
-	wg.Wait()
+	startTester()
+	dontExit()
 }
 
 func startProducer() {
 	//AMQP service to resend incoming requests from Web
 	amqpSender := producer.AmqpSender{Config: shared.AppConfig()}
+	amqpSender.Open()
 
 	//Start Web server to listen incoming requests
 	webServer := producer.WebServer{Config: shared.AppConfig(), Sender: amqpSender}
-	webServer.Start()
+	go webServer.Start()
 }
 
-func startConsumer() {
+func startConsumer(count int) {
 	//Atomigrate DB
 	db := consumer.DataBase{Config: shared.AppConfig()}
 	db.Initalize()
 
-	//Subsrcibe for Amqp messages to put them to databse
-	amqpReceiver := consumer.AmqpReceiver{Config: shared.AppConfig(), Db: db}
-	amqpReceiver.Subscribe()
+	for i := 1; i <= count; i++ {
+		//Subsrcibe for Amqp messages to put them to databse
+		amqpReceiver := consumer.AmqpReceiver{Config: shared.AppConfig(), Db: &db, No: i}
+		go amqpReceiver.Subscribe()
+	}
 }
 
-func startEmulator() {
-	//Start emulation by timer with 2 seconds
-	emu := Emulator{Config: shared.AppConfig()}
-	emu.Start()
+func startTester() {
+	//Start emulation 1000 messages
+	db := consumer.DataBase{Config: shared.AppConfig()}
+	db.Open()
+	tester := tester.Tester{Config: shared.AppConfig(), Db: &db}
+	go tester.Start()
+	go tester.WaitReady()
+}
+
+func dontExit() {
+	var wg = &sync.WaitGroup{}
+	wg.Add(1)
+	wg.Wait()
 }

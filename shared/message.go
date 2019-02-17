@@ -10,8 +10,12 @@ import (
 
 //Message Сообщение веб-серверу...
 type Message struct {
-	Item      int       `json:"item"`
-	TimeStamp time.Time `json:"timestamp"`
+	Item            int       `json:"item"`
+	Consumer        int       `json:"consumer"`
+	RequestTime     time.Time `json:"requestTime"`
+	ResponseTime    time.Time
+	AcknowledgeTime time.Time
+	Message         string
 }
 
 //ToJSON convert struct to Json byte array
