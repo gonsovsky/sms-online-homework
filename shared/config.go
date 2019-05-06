@@ -3,31 +3,35 @@ package shared
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"sync"
 )
 
-//Config - настройки программы
-type Cfg struct {
-	Participants int    //кол-во участников
-	Redis RedisCfg
+//Config of Application
+type Config struct {
+	WebServer struct {
+		Address string
+		Port    string
+	}
+	Amqp struct {
+		URL   string
+		Queue string
+	}
+	Db struct {
+		Host     string
+		Port     string
+		User     string
+		Password string
+		Database string
+	}
 }
 
-//RedisConfig - настройки программы, Redis
-type RedisCfg struct {
-	Host     string
-	Port     string
-	Db       int
-	Key      string
-}
-
-var instantiated *Cfg
+var instantiated *Config
 var once sync.Once
 
-//AppConfig - настройки программы
-func AppConfig() *Cfg {
+//AppConfig config instnce
+func AppConfig() *Config {
 	once.Do(func() {
 		c := flag.String("c", "config.json", "Specify the configuration file.")
 		flag.Parse()
@@ -37,23 +41,15 @@ func AppConfig() *Cfg {
 		}
 		defer file.Close()
 		decoder := json.NewDecoder(file)
-		Config := Cfg{}
+		Config := Config{}
 		err = decoder.Decode(&Config)
 		if err != nil {
 			log.Fatal("can't decode config JSON: ", err)
 		}
-		Pretty(Config)
+		log.Println("Config.WebServer.Port: ", Config.WebServer.Port)
+		log.Println("Config.Amqp.Url: ", Config.Amqp.URL)
+		log.Println("Config.Db.Host: ", Config.Db.Host)
 		instantiated = &Config
 	})
 	return instantiated
-}
-
-func RedisConfig() *RedisCfg {
-	return &AppConfig().Redis
-}
-
-//HostAndPort - Узел и порт Редис
-func (c *RedisCfg) HostAndPort() string {
-	return fmt.Sprintf("%v:%v", c.Host, c.Port)
-
 }
